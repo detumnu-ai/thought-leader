@@ -20,6 +20,8 @@ The guided workflow walks you through configuration, data preparation, building,
 
 ## How It Works
 
+![Workflow Diagram](assets/workflow-diagram.png)
+
 1. **Configure** — Set your company name, influencer, brand colors, and target audience
 2. **Get the data** — Run 4 PhantomBuster Phantoms, paste exports into the Data Input spreadsheet
 3. **Build** — The build script reads the XLSX and generates a self-contained HTML dashboard
