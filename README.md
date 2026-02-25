@@ -28,45 +28,69 @@ The guided workflow walks you through configuration, data preparation, building,
 
 ## Getting Your Data (PhantomBuster)
 
-You need **3 PhantomBuster CSV exports** from the thought leader's LinkedIn posts:
+You run **4 PhantomBuster Phantoms** in sequence. Each one feeds into the next.
 
-### 1. Likers CSV
+### Step 1: Post Scraper
 
-Use the **LinkedIn Post Likers** Phantom:
-- Input: List of LinkedIn post URLs
-- Output: CSV with everyone who liked each post
-- Key columns: name, occupation, company, profile URL
+**Phantom:** LinkedIn Post Scraper
 
-### 2. Commenters CSV
+Scrape the thought leader's posts to get content, dates, and post URLs. This gives you the `posts.csv` data.
 
-Use the **LinkedIn Post Commenters** Phantom:
-- Input: Same list of LinkedIn post URLs
-- Output: CSV with everyone who commented, plus their comment text
-- Key columns: name, occupation, company, profile URL, comment text, comment URL
+- **Input:** The thought leader's LinkedIn profile URL
+- **Settings:** Set a date range (e.g., posts from December onwards)
+- **Output:** CSV with post URLs, content, dates, engagement counts
+- **Why:** You need post URLs for steps 2-3, and post dates for the dashboard's time filter
 
-### 3. Profile Enrichment CSV (optional)
+> **Alternative:** You can also use the [Cowork Chrome extension](https://cowork.com) or build a custom Chrome extension to scrape posts. PhantomBuster is just the most reliable option.
 
-Use the **LinkedIn Profile Scraper** Phantom:
-- Input: Profile URLs from the liker/commenter exports
-- Output: Enriched profiles with current company, title, connection degree
-- Useful for filling in missing company names from headlines
+### Step 2: Likers Export
 
-### Preparing the CSVs
+**Phantom:** LinkedIn Post Likers
 
-The build script expects 3 input files:
+Scrape everyone who liked each post.
+
+- **Input:** Post URLs from Step 1 (copy the post URL column)
+- **Output:** CSV with name, occupation, profile URL for every liker per post
+- **Tip:** Run this for all posts at once — the Phantom handles multiple URLs
+
+### Step 3: Commenters Export
+
+**Phantom:** LinkedIn Post Commenters
+
+Scrape everyone who commented, including their comment text.
+
+- **Input:** Same post URLs from Step 1
+- **Output:** CSV with name, occupation, profile URL, comment text, comment URL per post
+- **Tip:** Run in parallel with Step 2 to save time
+
+### Step 4: Profile Scraper
+
+**Phantom:** LinkedIn Profile Scraper
+
+Enrich the profiles from Steps 2 and 3 with full company names, titles, and connection degree.
+
+- **Input:** Profile URLs from the liker + commenter exports (deduplicate first to avoid scraping the same person twice)
+- **Output:** Enriched CSV with current company, full title, connection degree
+- **Why:** LinkedIn headlines are often incomplete (missing company name). The profile scraper fills in the gaps, which improves BOB matching accuracy.
+
+### Preparing the 3 Input CSVs
+
+After running all 4 Phantoms, you prepare 3 files for the build script:
 
 | File | Source | What it contains |
 |------|--------|-----------------|
-| `posts.csv` | You create manually | Post IDs, URLs, titles, content, dates |
-| `engagers.csv` | Merge likers + commenters exports | All engagement data per post |
+| `posts.csv` | From Phantom 1 (Post Scraper) | Post IDs, URLs, titles, content, dates |
+| `engagers.csv` | Merge Phantoms 2 + 3, enrich with Phantom 4 | All engagement data per post |
 | `bob.csv` | Your CRM / target account list | Company names with priority scores |
 
 **Merging likers + commenters into `engagers.csv`:**
-- Combine both PhantomBuster exports into one file
-- For people who both liked AND commented, merge into a single row with `has_liked=true, has_commented=true`
-- Or keep separate rows — the build script deduplicates by profile URL within each post
+1. Take the likers CSV (Phantom 2) — add column `has_liked=true`, `has_commented=false`
+2. Take the commenters CSV (Phantom 3) — add column `has_liked=false`, `has_commented=true`
+3. Combine both into one file
+4. Enrich with company/degree data from the Profile Scraper (Phantom 4)
+5. For people who appear in both, you can merge into a single row or keep separate — the build script deduplicates by profile URL within each post
 
-See `skills/engagement-tracker/references/data-format.md` for full column specs and examples.
+See `skills/engagement-tracker/references/data-format.md` for full column specs, column mapping, and examples.
 
 ## CSV Format Reference
 

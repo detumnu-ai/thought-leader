@@ -1,50 +1,87 @@
 # Data Format Reference
 
-This document specifies the 3 CSV input formats and the PhantomBuster workflow for collecting LinkedIn engagement data.
+This document specifies the 3 CSV input formats and the full PhantomBuster pipeline for collecting LinkedIn engagement data.
 
 ---
 
-## PhantomBuster Setup
+## PhantomBuster Pipeline (4 Phantoms)
 
-You need two PhantomBuster Phantoms to collect engagement data from LinkedIn posts.
+You run 4 Phantoms in sequence. Each one feeds into the next.
 
-### 1. LinkedIn Post Likers Phantom
+### Phantom 1: LinkedIn Post Scraper
 
-Extracts all people who liked specific LinkedIn post URLs.
+Scrapes the thought leader's LinkedIn posts to get content, dates, and URLs.
 
-- **Input**: A list of LinkedIn post URLs (one per line, or a Google Sheet/CSV with a column of URLs)
-- **Output**: CSV with columns including `name`, `occupation`, `company`, `profileUrl`, `postUrl`, etc.
+- **Input:** The thought leader's LinkedIn profile URL
+- **Settings:** Set a date range (e.g., "posts from December 2025 onwards") to limit scope
+- **Output:** CSV with post URLs, full post content, publication dates, engagement counts
+- **Why this matters:** You need the post URLs as input for Phantoms 2 and 3. The post dates power the dashboard's time filter (30/60/90 days).
 
-### 2. LinkedIn Post Commenters Phantom
+> **Alternative:** You can also collect posts using the Cowork Chrome extension or a custom Chrome extension. PhantomBuster is the most reliable automated option.
 
-Extracts all commenters and their comment text from specific LinkedIn post URLs.
+### Phantom 2: LinkedIn Post Likers
 
-- **Input**: Same list of LinkedIn post URLs
-- **Output**: CSV with columns including `name`, `occupation`, `company`, `profileUrl`, `comment`, `commentUrl`, `postUrl`, etc.
+Extracts everyone who liked each post.
 
-### 3. How to Export
+- **Input:** Post URLs from Phantom 1 (copy the post URL column into the Phantom's input)
+- **Output:** CSV with `name`, `occupation`, `profileUrl`, `postUrl` for every liker
+- **Tip:** You can run all post URLs at once — the Phantom processes them sequentially
+
+### Phantom 3: LinkedIn Post Commenters
+
+Extracts all commenters and their comment text from the same posts.
+
+- **Input:** Same post URLs from Phantom 1
+- **Output:** CSV with `name`, `occupation`, `profileUrl`, `comment`, `commentUrl`, `postUrl`
+- **Tip:** Run this in parallel with Phantom 2 to save time — they don't depend on each other
+
+### Phantom 4: LinkedIn Profile Scraper
+
+Enriches the profiles from Phantoms 2 and 3 with complete company names, titles, and connection degree.
+
+- **Input:** Deduplicated profile URLs from the liker + commenter exports. Combine the `profileUrl` columns, remove duplicates, then feed into this Phantom.
+- **Output:** CSV with current company name, full job title, connection degree, and other profile data
+- **Why this matters:** LinkedIn headlines are often incomplete (e.g., "Marketing Leader" without a company name). The profile scraper fills in the gaps, which dramatically improves BOB (Book of Business) matching accuracy.
+
+### How to Export
 
 1. Go to [PhantomBuster](https://phantombuster.com) and open each Phantom's results page
 2. Click **Download CSV** to export the full result set
-3. Save each file locally (e.g., `likers-export.csv` and `commenters-export.csv`)
+3. Save each file locally:
+   - Phantom 1 → `posts-export.csv`
+   - Phantom 2 → `likers-export.csv`
+   - Phantom 3 → `commenters-export.csv`
+   - Phantom 4 → `profiles-export.csv`
 
 ---
 
-## Merging Liker + Commenter Exports
+## Preparing the 3 Input CSVs
 
-Before feeding data into the build script, combine both PhantomBuster exports into a single `engagers.csv`.
+After running all 4 Phantoms, you prepare 3 files for the build script.
 
-### Option A: Merged Rows (Recommended)
+### posts.csv — From Phantom 1
 
-1. Open both CSVs
-2. Create a new `engagers.csv` with the columns specified below
-3. For each liker, add a row with `has_liked=true`, `has_commented=false`
-4. For each commenter, add a row with `has_liked=false`, `has_commented=true`
-5. If a person appears in both exports (same `profile_url` on the same `post_id`), merge into a single row with `has_liked=true`, `has_commented=true` and include their comment text
+Take the Post Scraper output and map it to the `posts.csv` format (see column spec below). You need the post ID (activity number from the URL), the full URL, a short title, the full content, and the date.
 
-### Option B: Separate Rows (Also Fine)
+### engagers.csv — Merge Phantoms 2 + 3 + 4
 
-Keep likers and commenters as separate rows. The build script deduplicates by `profile_url` within each post when calculating scores, so duplicate entries will not inflate engagement counts.
+Combine the liker and commenter exports into a single `engagers.csv`, enriched with profile data.
+
+**Step-by-step:**
+
+1. Take `likers-export.csv` (Phantom 2) — add columns `has_liked=true`, `has_commented=false`
+2. Take `commenters-export.csv` (Phantom 3) — add columns `has_liked=false`, `has_commented=true`
+3. Combine both into one file
+4. Enrich with `profiles-export.csv` (Phantom 4) — match by `profileUrl` to fill in company names, connection degree, and full titles
+5. Map PhantomBuster columns to the `engagers.csv` format (see mapping table below)
+
+**Handling duplicates:** If someone both liked AND commented on the same post, you can either:
+- **Option A (recommended):** Merge into a single row with `has_liked=true`, `has_commented=true`
+- **Option B (also fine):** Keep separate rows — the build script deduplicates by `profile_url` within each post
+
+### bob.csv — From Your CRM
+
+Export your target account list from your CRM, or create manually. Just needs company names with optional priority/tier.
 
 ### Mapping PhantomBuster Columns
 
@@ -65,9 +102,9 @@ Extract the `post_id` from the LinkedIn post URL. The activity ID is the numeric
 
 ## CSV Specifications
 
-### posts.csv (Manually Created)
+### posts.csv (From Phantom 1: Post Scraper)
 
-You create this file yourself with metadata about each LinkedIn post you want to track.
+Map the Post Scraper output to this format. Extract the post ID (activity number) from each URL.
 
 | Column | Required | Description |
 |--------|----------|-------------|
@@ -84,9 +121,9 @@ post_id,post_url,title,content,post_date
 7654321098765432100,https://www.linkedin.com/feed/update/urn:li:activity:7654321098765432100/,Stop chasing MQLs,"Full post text goes here...",2026-02-15
 ```
 
-### engagers.csv (From PhantomBuster)
+### engagers.csv (Merged from Phantoms 2 + 3 + 4)
 
-Combined export of likers and commenters from PhantomBuster.
+Combined and enriched export of likers, commenters, and profile data.
 
 | Column | Required | Description |
 |--------|----------|-------------|
