@@ -1,0 +1,24 @@
+# Output
+output/
+
+# Client data
+*.csv
+skills/engagement-tracker/references/client-configs/*.json
+!skills/engagement-tracker/references/client-configs/_template.json
+!skills/engagement-tracker/references/client-configs/_example.json
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

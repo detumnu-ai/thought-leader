@@ -1,0 +1,10 @@
+{
+  "name": "thought-leader",
+  "description": "Generate LinkedIn Post Engagement Intelligence dashboards. Track who engages with thought leaders' posts, cross-reference against target accounts, deploy to Netlify.",
+  "version": "1.0.0",
+  "author": { "name": "Unmuted" },
+  "homepage": "https://github.com/detumnu-ai/thought-leader",
+  "repository": "https://github.com/detumnu-ai/thought-leader",
+  "license": "MIT",
+  "keywords": ["linkedin", "engagement", "thought-leader", "demand-gen", "analytics", "dashboard"]
+}

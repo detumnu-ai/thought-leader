@@ -1,0 +1,19 @@
+{
+  "company_name": "Acme Corp",
+  "influencer_name": "Jane Smith",
+  "influencer_role": "VP of Sales at Acme Corp — Helping B2B teams close faster",
+  "brand": {
+    "primary_color": "#2563EB",
+    "primary_color_dark": "#1D4ED8",
+    "primary_color_light": "#DBEAFE",
+    "primary_color_mid": "#93C5FD",
+    "accent_color": "#059669",
+    "accent_color_light": "#D1FAE5"
+  },
+  "badge_label": "Sales Intelligence",
+  "bob_description": "target accounts",
+  "bob_count": 500,
+  "target_audience_label": "Sales/Revenue",
+  "password": "AcmeDemo2026!",
+  "netlify_site_name": "acme-engagement"
+}

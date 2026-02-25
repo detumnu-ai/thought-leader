@@ -1,0 +1,12 @@
+{
+  "name": "detumnu-ai",
+  "owner": { "name": "Unmuted" },
+  "plugins": [
+    {
+      "name": "thought-leader",
+      "source": "./",
+      "description": "LinkedIn Post Engagement Intelligence dashboards",
+      "version": "1.0.0"
+    }
+  ]
+}

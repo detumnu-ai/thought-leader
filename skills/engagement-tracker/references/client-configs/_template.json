@@ -1,0 +1,19 @@
+{
+  "company_name": "",
+  "influencer_name": "",
+  "influencer_role": "",
+  "brand": {
+    "primary_color": "#6B2DEF",
+    "primary_color_dark": "#5321C9",
+    "primary_color_light": "#EDE5FF",
+    "primary_color_mid": "#C4A8FF",
+    "accent_color": "#007A7A",
+    "accent_color_light": "#E0F2F2"
+  },
+  "badge_label": "Demand Gen Intelligence",
+  "bob_description": "target accounts",
+  "bob_count": 0,
+  "target_audience_label": "HR/People",
+  "password": "",
+  "netlify_site_name": ""
+}

@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{INFLUENCER_NAME}} — Post Engagement Intelligence · {{COMPANY_NAME}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #ffffff;
+  --off-white: #f9f8f7;
+  --light-gray: #f2f1ef;
+  --border: #e8e6e2;
+  --text: #1a1a1a;
+  --muted: #6b6b6b;
+  --soft: #9b9b9b;
+  --primary: {{PRIMARY_COLOR}};
+  --primary-dark: {{PRIMARY_COLOR_DARK}};
+  --primary-light: {{PRIMARY_COLOR_LIGHT}};
+  --primary-mid: {{PRIMARY_COLOR_MID}};
+  --accent: {{ACCENT_COLOR}};
+  --accent-light: {{ACCENT_COLOR_LIGHT}};
+  --signal-hot: #E8340A;
+  --signal-hot-bg: #FFF0ED;
+  --signal-warm: #D97706;
+  --signal-warm-bg: #FFFBEB;
+  --bob-gold: #B45309;
+  --bob-gold-bg: #FEF3C7;
+  --bob-gold-border: #FDE68A;
+  --grad-hero: linear-gradient(160deg, #faf7ff 0%, #f5f0ff 40%, #fff5f0 100%);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--off-white); color: var(--text); line-height: 1.5; }
+
+
+/* ── TIME FILTER ── */
+.time-filter-bar { max-width: 820px; margin: 0 auto; padding: 16px 20px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.time-filter-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
+.time-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.time-btn { padding: 6px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; white-space: nowrap; }
+.time-btn:hover { border-color: var(--primary); color: var(--primary); }
+.time-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+/* BOB totals tooltip */
+.totals-item { position: relative; }
+.bob-totals-tooltip { display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: #1e1e2e; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 13px; min-width: 200px; max-width: 260px; z-index: 999; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.bob-totals-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #1e1e2e; }
+.totals-item:hover .bob-totals-tooltip { display: block; }
+.bob-tooltip-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.5); margin-bottom: 7px; }
+.bob-tooltip-row { display: flex; align-items: center; gap: 7px; padding: 3px 0; }
+.bob-tooltip-avatar { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #f59e0b); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: white; flex-shrink: 0; }
+.bob-tooltip-name { font-size: 11px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.bob-tooltip-company { font-size: 10px; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.bob-tooltip-empty { font-size: 11px; color: rgba(255,255,255,0.4); font-style: italic; }
+
+/* Custom date range */
+.date-range-wrap { display: flex; align-items: center; gap: 6px; }
+.date-input { padding: 5px 10px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); font-size: 11px; font-weight: 500; color: var(--text); font-family: 'Inter', sans-serif; cursor: pointer; outline: none; transition: border-color 0.15s; }
+.date-input:focus { border-color: var(--primary); }
+.date-range-sep { font-size: 11px; color: var(--muted); font-weight: 600; }
+.date-apply-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid var(--primary); background: var(--primary-light); color: var(--primary); font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+.date-apply-btn:hover { background: var(--primary); color: white; }
+
+/* ── TOTALS BAR ── */
+.totals-bar { max-width: 820px; margin: 0 auto; padding: 12px 20px 0; }
+.totals-row { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 14px; padding: 16px 20px; display: flex; gap: 0; overflow: hidden; }
+.totals-item { flex: 1; text-align: center; position: relative; }
+.totals-item + .totals-item::before { content: ''; position: absolute; left: 0; top: 15%; height: 70%; width: 1px; background: rgba(255,255,255,0.1); }
+.totals-num { font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; transition: all 0.3s; }
+.totals-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.6; color: white; }
+.totals-item:nth-child(1) .totals-num { color: #a78bfa; }
+.totals-item:nth-child(2) .totals-num { color: #34d399; }
+.totals-item:nth-child(3) .totals-num { color: #fbbf24; }
+.totals-item:nth-child(4) .totals-num { color: #f87171; }
+.totals-item:nth-child(5) .totals-num { color: #60a5fa; }
+.totals-item:nth-child(6) .totals-num { color: #f472b6; }
+
+/* NAV */
+nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 20px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.nav-badge { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); background: var(--accent-light); padding: 4px 12px; border-radius: 20px; }
+
+/* ── HERO ── */
+.hero { background: var(--grad-hero); padding: 20px 20px 20px; border-bottom: 1px solid var(--border); }
+.hero-inner { max-width: 820px; margin: 0 auto; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.hero h1 { font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px; max-width: 100%; }
+.hero h1 em { font-style: normal; color: var(--primary); }
+.hero-sub { font-size: 14px; color: var(--muted); max-width: 100%; line-height: 1.6; }
+
+/* ── POST SLIDER ── */
+.slider-section { max-width: 820px; margin: 0 auto; padding: 28px 20px 0; }
+.slider-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.post-slider { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; scroll-snap-type: x mandatory; }
+.post-slider::-webkit-scrollbar { height: 4px; }
+.post-slider::-webkit-scrollbar-track { background: transparent; }
+.post-slider::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.post-pill {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 180px;
+  max-width: 220px;
+  position: relative;
+  overflow: hidden;
+}
+.post-pill::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--border); transition: background 0.15s; }
+.post-pill:hover { border-color: var(--primary-mid); box-shadow: 0 4px 16px rgba(107,45,239,0.1); }
+.post-pill.active { border-color: var(--primary); border-width: 2.5px; background: var(--primary-light); box-shadow: 0 2px 12px rgba(107,45,239,0.18); }
+.post-pill.active::after { background: var(--primary); }
+.post-pill-rank { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--soft); margin-bottom: 4px; }
+.post-pill.active .post-pill-rank { color: var(--primary); }
+.post-pill-title { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; margin-bottom: 8px; }
+.post-pill.active .post-pill-title { color: var(--primary-dark); }
+.post-pill-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+.post-pill-stat { font-size: 10px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 2px; }
+.post-pill-stat.highlight { color: var(--primary); }
+.post-pill-bar { position: absolute; bottom: 3px; left: 0; height: 3px; background: var(--primary); transition: width 0.3s; }
+
+/* ── STATS ── */
+.stats-section { max-width: 820px; margin: 0 auto; padding: 24px 20px 0; }
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; position: relative; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
+.stat-card:hover { box-shadow: 0 8px 32px rgba(107,45,239,0.1); transform: translateY(-2px); }
+.stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+.stat-card.c1::after { background: var(--primary); }
+.stat-card.c2::after { background: var(--bob-gold); }
+.stat-card.c3::after { background: var(--signal-hot); }
+.stat-card.c4::after { background: var(--accent); }
+.stat-card.c5::after { background: #EC4899; }
+.stat-num { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; transition: all 0.3s; }
+.stat-card.c1 .stat-num { color: var(--primary); }
+.stat-card.c2 .stat-num { color: var(--bob-gold); }
+.stat-card.c3 .stat-num { color: var(--signal-hot); }
+.stat-card.c4 .stat-num { color: var(--accent); }
+.stat-card.c5 .stat-num { color: #EC4899; }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; }
+
+/* ── BOB SECTION ── */
+.bob-section { max-width: 820px; margin: 0 auto; padding: 0 20px 24px; }
+.bob-banner { background: linear-gradient(135deg, #fffbeb 0%, #fff7f0 100%); border: 1.5px solid var(--bob-gold-border); border-radius: 16px; overflow: hidden; }
+.bob-banner-header { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--bob-gold-border); gap: 12px; flex-wrap: wrap; }
+.bob-banner-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--bob-gold); letter-spacing: -0.2px; }
+.bob-banner-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.bob-chip { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+.bob-chip.total { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.bob-chip.engaged { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+.bob-chip.zero { background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
+.bob-body { padding: 16px 20px; }
+.bob-zero-state { text-align: center; padding: 16px; }
+.bob-zero-icon { font-size: 28px; margin-bottom: 8px; }
+.bob-zero-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.bob-zero-sub { font-size: 12px; color: var(--muted); max-width: 440px; margin: 0 auto 12px; line-height: 1.5; }
+.bob-zero-progress { background: var(--light-gray); border-radius: 8px; padding: 12px 16px; max-width: 480px; margin: 0 auto; }
+.bob-zero-progress-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 5px; display: flex; justify-content: space-between; }
+.bob-progress-bar-wrap { background: var(--border); border-radius: 4px; height: 7px; overflow: hidden; }
+.bob-progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--bob-gold), #F59E0B); }
+.bob-watchlist { margin-top: 14px; }
+.bob-watchlist-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.bob-watchlist-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.bob-watch-chip { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px; background: var(--white); border: 1px solid var(--bob-gold-border); color: #92400E; }
+.bob-accounts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.bob-account-card { background: var(--white); border: 1.5px solid var(--bob-gold-border); border-radius: 10px; padding: 12px 14px; }
+.bob-account-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bob-account-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #FEF3C7, #FDE68A); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.bob-account-name { font-size: 12px; font-weight: 700; flex: 1; line-height: 1.3; }
+.bob-account-stats { display: flex; gap: 6px; margin-bottom: 8px; }
+.bob-stat { font-size: 10px; font-weight: 600; background: var(--light-gray); padding: 2px 7px; border-radius: 5px; color: var(--muted); }
+.bob-stat.highlight { background: var(--primary-light); color: var(--primary); }
+.bob-engager-list { display: flex; flex-direction: column; gap: 3px; }
+.bob-engager { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.bob-engager-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--bob-gold); flex-shrink: 0; }
+
+/* ── MAIN LAYOUT ── */
+.main { max-width: 820px; margin: 0 auto; padding: 0 20px 48px; display: flex; flex-direction: column; gap: 20px; }
+@media (max-width: 700px) { .sidebar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+.section { margin-bottom: 28px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
+.section-count { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--light-gray); padding: 2px 9px; border-radius: 20px; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+.filter-btn { padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border); background: var(--white); font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; }
+.filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.filter-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+.filter-btn.bob-filter.active { background: var(--bob-gold); border-color: var(--bob-gold); }
+.filter-btn.hr-filter { border-color: #16a34a; color: #16a34a; }
+.filter-btn.hr-filter:hover { background: #f0fdf4; }
+.filter-btn.hr-filter.active { background: #16a34a; border-color: #16a34a; color: white; }
+.filter-btn.hr-filter::before { content: "★ "; font-size: 9px; }
+.filter-btn.hot-intent-filter { border-color: #dc2626; color: #dc2626; background: #fff5f5; }
+.filter-btn.hot-intent-filter:hover { background: #fee2e2; }
+.filter-btn.hot-intent-filter.active { background: linear-gradient(135deg, #dc2626, #ea580c); border-color: #dc2626; color: white; }
+.filter-btn.hot-intent-filter::before { content: "🔥 "; font-size: 9px; }
+.tag-hot-intent { background: linear-gradient(135deg, #fef2f2, #fff7ed); color: #dc2626; border: 1px solid #fca5a5; }
+.person-card.is-hot-intent { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
+.person-card.is-hot-intent:hover { border-color: #dc2626; box-shadow: 0 4px 16px rgba(220,38,38,0.12); }
+
+/* PERSON CARDS */
+.people-list { display: flex; flex-direction: column; gap: 9px; }
+.person-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 11px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+.person-card:hover { border-color: var(--primary-mid); box-shadow: 0 4px 16px rgba(107,45,239,0.08); }
+.person-card.is-bob { border-color: var(--bob-gold-border); background: linear-gradient(135deg, #fffdf5, #fff); }
+.person-card.is-bob:hover { border-color: var(--bob-gold); box-shadow: 0 4px 16px rgba(180,83,9,0.1); }
+.person-card.is-target { border-color: #FBD5CF; background: linear-gradient(135deg, #fff9f8, #fff); }
+.person-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: white; flex-shrink: 0; }
+.person-body { flex: 1; min-width: 0; }
+.person-top { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; flex-wrap: wrap; }
+.person-name { font-size: 13px; font-weight: 700; color: var(--text); text-decoration: none; }
+.person-name:hover { color: var(--primary); text-decoration: underline; }
+.person-occ { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 4px; }
+.tag-bob { background: var(--bob-gold-bg); color: var(--bob-gold); border: 1px solid var(--bob-gold-border); }
+.tag-target { background: #FFF0ED; color: var(--signal-hot); border: 1px solid #FFD0C9; }
+.tag-commented { background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-mid); }
+.tag-liked { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+.tag-internal { background: var(--accent-light); color: var(--accent); border: 1px solid #A7D8D8; }
+.tag-exec { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.tag-marketing { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+.tag-sales { background: #F5F3FF; color: #7C3AED; border: 1px solid #DDD6FE; }
+.tag-hr { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+.comment-bubble { margin-top: 8px; background: var(--light-gray); border-left: 3px solid var(--primary-mid); border-radius: 0 7px 7px 0; padding: 8px 12px; font-size: 11px; color: #444; line-height: 1.5; }
+.comment-bubble a { font-size: 10px; color: var(--primary); text-decoration: none; margin-top: 4px; display: inline-block; font-weight: 600; }
+.bob-match-label { font-size: 10px; color: var(--bob-gold); font-weight: 600; margin-top: 5px; }
+.score-badge { margin-left: auto; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+
+/* SIDEBAR */
+.sidebar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.inline-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.review-card { background: var(--white); border: 1px solid #fde68a; border-radius: 13px; overflow: hidden; margin-bottom: 16px; }
+.review-card-header { padding: 13px 16px 11px; border-bottom: 1px solid #fde68a; font-size: 12px; font-weight: 700; color: #92400e; background: #fffbeb; display: flex; align-items: center; gap: 7px; }
+.review-card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.review-section { padding: 12px 16px; }
+.review-section + .review-section { border-left: 1px solid var(--border); }
+.review-section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+.unknown-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; text-decoration: none; color: inherit; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
+.unknown-item:last-child { border-bottom: none; }
+.unknown-item:hover { opacity: .8; }
+.unknown-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,#fde68a,#f59e0b); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #92400e; flex-shrink: 0; }
+.unknown-info { flex: 1; min-width: 0; }
+.unknown-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unknown-occ { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unknown-link { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.unknown-empty { font-size: 12px; color: var(--muted); padding: 4px 0; }
+.see-more-btn { margin-top: 8px; background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 11px; color: var(--muted); cursor: pointer; width: 100%; text-align: center; }
+.see-more-btn:hover { background: var(--bg); color: var(--text); }
+#engager-see-more-btn { margin-top: 12px; padding: 9px 16px; font-size: 12px; }
+.signal-item { position: relative; }
+.signal-item[data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; background: #1e293b; color: #fff; font-size: 11px; line-height: 1.4; padding: 7px 10px; border-radius: 7px; white-space: normal; z-index: 99; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.signal-item[data-tip]:hover::before { content: ''; position: absolute; bottom: calc(100% + 1px); left: 16px; border: 5px solid transparent; border-top-color: #1e293b; z-index: 99; pointer-events: none; }
+.sidebar-card { background: var(--white); border: 1px solid var(--border); border-radius: 13px; overflow: hidden; }
+.sidebar-card-header { padding: 13px 16px 11px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
+.sidebar-card-body { padding: 12px 16px; }
+
+.audience-row { display: flex; align-items: center; gap: 9px; padding: 6px 6px; border-bottom: 1px solid var(--border); font-size: 12px; position: relative; cursor: pointer; border-radius: 6px; margin: 0 -6px; transition: background 0.15s; }
+.audience-row:last-child { border-bottom: none; }
+.audience-row:hover { background: var(--light-gray); }
+.audience-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.audience-label { flex: 1; color: var(--text); }
+.audience-bar-wrap { flex: 2; background: var(--border); border-radius: 4px; height: 5px; overflow: hidden; }
+.audience-bar { height: 100%; border-radius: 4px; }
+.audience-count { font-size: 11px; font-weight: 700; color: var(--muted); width: 22px; text-align: right; }
+
+/* Audience tooltip */
+.audience-tooltip { display: none; position: fixed; z-index: 9999; background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.14); padding: 11px 13px; min-width: 200px; max-width: 270px; pointer-events: none; }
+.audience-tooltip.visible { display: block; }
+.audience-tooltip-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 7px; }
+.audience-tooltip-person { display: flex; align-items: center; gap: 7px; padding: 4px 0; border-bottom: 1px solid var(--light-gray); }
+.audience-tooltip-person:last-child { border-bottom: none; padding-bottom: 0; }
+.audience-tooltip-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: white; flex-shrink: 0; }
+.audience-tooltip-name { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.audience-tooltip-role { font-size: 10px; color: var(--muted); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px; }
+
+.signal-list { display: flex; flex-direction: column; gap: 7px; }
+.signal-item { padding: 10px 12px; border-radius: 9px; border: 1.5px solid; font-size: 11px; line-height: 1.4; }
+.signal-item.hot { background: #FFF0ED; border-color: #FFD0C9; color: var(--signal-hot); }
+.signal-item.warm { background: #FFFBEB; border-color: #FDE68A; color: var(--signal-warm); }
+.signal-item.note { background: var(--primary-light); border-color: var(--primary-mid); color: var(--primary-dark); }
+.signal-icon { font-size: 13px; margin-bottom: 2px; display: block; }
+.signal-text { font-weight: 600; }
+.signal-sub { font-weight: 400; opacity: 0.8; margin-top: 2px; }
+
+.target-list { display: flex; flex-direction: column; gap: 6px; }
+.target-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; background: #fff9f8; border: 1px solid #FFD0C9; border-radius: 8px; font-size: 11px; text-decoration: none; color: var(--text); transition: all 0.15s; }
+.target-item:hover { background: #FFF0ED; border-color: var(--signal-hot); }
+.target-item .t-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--signal-hot), #FF6B4A); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: white; flex-shrink: 0; }
+.target-item .t-name { font-weight: 700; }
+.target-item .t-role { color: var(--muted); font-size: 10px; margin-top: 1px; }
+
+/* POST PREVIEW in current post area */
+.post-preview { background: var(--white); border: 1px solid var(--border); border-radius: 13px; padding: 18px 20px; margin-bottom: 20px; position: relative; }
+.post-preview::before { content: attr(data-label); position: absolute; top: -9px; left: 16px; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background: var(--primary); color: white; padding: 2px 9px; border-radius: 8px; }
+.post-preview-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.post-preview-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-mid)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: white; flex-shrink: 0; }
+.post-preview-name { font-size: 13px; font-weight: 700; }
+.post-preview-role { font-size: 11px; color: var(--muted); }
+.post-preview-text { font-size: 12px; line-height: 1.65; color: #333; white-space: pre-line; max-height: 120px; overflow: hidden; position: relative; }
+.post-preview-text.expanded { max-height: none; }
+.post-preview-text::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(transparent, white); pointer-events: none; }
+.post-preview-text.expanded::after { display: none; }
+.post-expand-btn { font-size: 11px; color: var(--primary); cursor: pointer; font-weight: 600; margin-top: 6px; display: inline-block; background: none; border: none; padding: 0; font-family: 'Inter', sans-serif; }
+.post-expand-btn:hover { text-decoration: underline; }
+.post-preview-link { font-size: 10px; color: var(--primary); text-decoration: none; font-weight: 600; margin-top: 6px; display: inline-block; }
+.post-preview-link:hover { text-decoration: underline; }
+
+.search-wrap { position: relative; margin-bottom: 12px; }
+.search-input { width: 100%; padding: 9px 13px 9px 34px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); outline: none; transition: border-color 0.15s; }
+.search-input:focus { border-color: var(--primary); }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--soft); font-size: 13px; }
+.hidden { display: none !important; }
+.no-results { text-align: center; padding: 36px 20px; color: var(--muted); font-size: 13px; background: var(--white); border: 1px dashed var(--border); border-radius: 11px; }
+
+footer { background: var(--white); border-top: 1px solid var(--border); padding: 20px 20px; text-align: center; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="pw-gate" style="position:fixed;inset:0;z-index:9999;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
+  <div style="background:#fff;border-radius:16px;padding:48px 40px;max-width:400px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.4);">
+    <div style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#e5530a;margin-bottom:12px;">{{COMPANY_NAME}} · {{BADGE_LABEL}}</div>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1a1a;">Engagement Intelligence</h2>
+    <p style="margin:0 0 28px;font-size:14px;color:#6b6b6b;">Enter the password to access this dashboard.</p>
+    <input id="pw-input" type="password" placeholder="Password" autofocus
+      style="width:100%;box-sizing:border-box;padding:12px 16px;font-size:15px;border:1.5px solid #e8e6e2;border-radius:8px;outline:none;margin-bottom:12px;font-family:'Inter',sans-serif;"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <div id="pw-error" style="font-size:13px;color:#c0392b;min-height:18px;margin-bottom:10px;"></div>
+    <button onclick="checkPw()"
+      style="width:100%;padding:13px;background:#e5530a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">
+      Unlock Dashboard
+    </button>
+  </div>
+</div>
+<script>
+  (function(){
+    var pw = '{{PASSWORD}}';
+    if(!pw || sessionStorage.getItem('pg_unlocked')==='1'){
+      document.getElementById('pw-gate').style.display='none';
+    }
+  })();
+  function checkPw(){
+    var val = document.getElementById('pw-input').value;
+    if(val === '{{PASSWORD}}'){
+      sessionStorage.setItem('pg_unlocked','1');
+      document.getElementById('pw-gate').style.display='none';
+    } else {
+      var err = document.getElementById('pw-error');
+      err.textContent = 'Incorrect password. Please try again.';
+      document.getElementById('pw-input').value='';
+      document.getElementById('pw-input').focus();
+    }
+  }
+</script>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">{{COMPANY_NAME}}</div>
+  <div class="nav-badge">{{BADGE_LABEL}}</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Internal Influencer · LinkedIn Post Analysis</div>
+    <h1>{{INFLUENCER_NAME}}'s<br><em>Engagement Intelligence</em></h1>
+    <p class="hero-sub">Who engaged and which ones are in {{COMPANY_NAME}}'s Book of Business ({{BOB_COUNT}} {{BOB_DESCRIPTION}})? Built for the demand gen team to spot warm signals and prioritise outreach.</p>
+  </div>
+</div>
+
+
+<!-- TIME FILTER -->
+<div class="time-filter-bar">
+  <div class="time-filter-label">📅 Period</div>
+  <div class="time-btns">
+    <button class="time-btn active" data-days="all">All time</button>
+    <button class="time-btn" data-days="30">Last 30 days</button>
+    <button class="time-btn" data-days="60">Last 60 days</button>
+    <button class="time-btn" data-days="90">Last 90 days</button>
+  </div>
+  <div class="date-range-wrap">
+    <input class="date-input" type="date" id="date-from" title="From">
+    <span class="date-range-sep">→</span>
+    <input class="date-input" type="date" id="date-to" title="To">
+    <button class="date-apply-btn" id="date-apply-btn">Apply</button>
+  </div>
+</div>
+
+<!-- TOTALS BAR -->
+<div class="totals-bar">
+  <div class="totals-row">
+    <div class="totals-item"><div class="totals-num" id="total-posts">—</div><div class="totals-label">Posts</div></div>
+    <div class="totals-item"><div class="totals-num" id="total-engagers">—</div><div class="totals-label">Engagers</div></div>
+    <div class="totals-item" id="bob-totals-item" style="cursor:default"><div class="totals-num" id="total-bob">—</div><div class="totals-label">BOB Matches ↑</div><div class="bob-totals-tooltip" id="bob-totals-tooltip"><div class="bob-tooltip-title">BOB accounts engaged</div><div id="bob-tooltip-list"><span class="bob-tooltip-empty">No BOB matches</span></div></div></div>
+    <div class="totals-item"><div class="totals-num" id="total-comments">—</div><div class="totals-label">Commenters</div></div>
+    <div class="totals-item"><div class="totals-num" id="total-likes">—</div><div class="totals-label">Likers</div></div>
+    <div class="totals-item"><div class="totals-num" id="total-external">—</div><div class="totals-label">Ext. Leads</div></div>
+  </div>
+</div>
+
+<!-- POST SLIDER -->
+<div class="slider-section">
+  <div class="slider-label">Posts ranked by reach · click to explore</div>
+  <div class="post-slider" id="post-slider">
+    <!-- Injected by JS -->
+  </div>
+</div>
+<div style="max-width:820px;margin:6px auto 0;padding:0 20px;font-size:10px;color:var(--muted);">Click a post to select it · click more to combine · click again to deselect · no selection = all posts</div>
+
+<!-- STATS -->
+<div class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-card c1"><div class="stat-num" id="stat-engagers">—</div><div class="stat-label">Engagers</div></div>
+    <div class="stat-card c2"><div class="stat-num" id="stat-bob">—</div><div class="stat-label">BOB Matches</div></div>
+    <div class="stat-card c3"><div class="stat-num" id="stat-comments">—</div><div class="stat-label">Commenters</div></div>
+    <div class="stat-card c4"><div class="stat-num" id="stat-likes">—</div><div class="stat-label">Likers</div></div>
+    <div class="stat-card c5"><div class="stat-num" id="stat-external">—</div><div class="stat-label">External Leads</div></div>
+  </div>
+</div>
+
+<!-- BOB SECTION -->
+<div class="bob-section">
+  <div class="bob-banner">
+    <div class="bob-banner-header">
+      <div class="bob-banner-title">📋 Book of Business · Account Engagement</div>
+      <div class="bob-banner-meta">
+        <span class="bob-chip total">{{BOB_COUNT}} {{BOB_DESCRIPTION}}</span>
+        <span class="bob-chip" id="bob-chip-engaged">—</span>
+      </div>
+    </div>
+    <div class="bob-body" id="bob-body"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="left-col">
+    <!-- Post preview -->
+    <div class="post-preview" data-label="LinkedIn Post" id="post-preview-card">
+      <div class="post-preview-author">
+        <div class="post-preview-avatar">{{INFLUENCER_INITIALS}}</div>
+        <div>
+          <div class="post-preview-name">{{INFLUENCER_NAME}}</div>
+          <div class="post-preview-role">{{INFLUENCER_ROLE}}</div>
+        </div>
+      </div>
+      <div class="post-preview-text" id="post-preview-text"></div>
+      <button class="post-expand-btn" id="post-expand-btn" onclick="toggleExpand()">Read more →</button>
+      <br><a class="post-preview-link" id="post-preview-link" href="#" target="_blank">Open on LinkedIn →</a>
+    </div>
+
+    <!-- Inline insight cards above engager list -->
+    <div class="inline-cards">
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">📊 Audience Breakdown</div>
+        <div class="sidebar-card-body" id="audience-breakdown">
+          <!-- Injected per post -->
+        </div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">⚡ Demand Gen Signals</div>
+        <div class="sidebar-card-body" id="demand-signals">
+          <!-- Injected per post -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All engagers</button>
+      <button class="filter-btn bob-filter" data-filter="bob">📋 BOB accounts</button>
+      <button class="filter-btn" data-filter="commented">💬 Commented</button>
+      <button class="filter-btn" data-filter="executive">🏆 Executive</button>
+      <button class="filter-btn hr-filter" data-filter="hr">👥 {{TARGET_AUDIENCE_LABEL}} Buyers</button>
+      <button class="filter-btn hot-intent-filter" data-filter="hot-intent">Hot Intent · BOB + {{TARGET_AUDIENCE_LABEL}}</button>
+      <button class="filter-btn" data-filter="external">🔍 External only</button>
+    </div>
+
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" type="text" placeholder="Search by name, company, or role…">
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Engagers <span class="section-count" id="results-count">—</span></div>
+      </div>
+      <div class="people-list" id="people-list"></div>
+      <div class="no-results hidden" id="no-results">No engagers match your filter.</div>
+      <button class="see-more-btn" id="engager-see-more-btn" style="display:none" onclick="toggleEngagerLimit()"></button>
+    </div>
+
+    <!-- Manual Review: unknown company (bottom) -->
+    <div class="review-card" id="unknown-card" style="display:none;margin-top:16px">
+      <div class="review-card-header">🔍 Needs Manual Review — company not visible in headline</div>
+      <div class="review-card-body">
+        <div class="review-section">
+          <div class="review-section-title" id="unknown-hr-title">HR — company unknown</div>
+          <div id="unknown-hr-list"></div>
+          <button class="see-more-btn" id="unknown-hr-more-btn" style="display:none" onclick="toggleSeeMore('unknown-hr')">Show more ▼</button>
+          <div id="unknown-hr-more" style="display:none"></div>
+        </div>
+        <div class="review-section">
+          <div class="review-section-title" id="unknown-all-title">All — company unknown</div>
+          <div id="unknown-all-list"></div>
+          <button class="see-more-btn" id="unknown-all-more-btn" style="display:none" onclick="toggleSeeMore('unknown-all')">Show more ▼</button>
+          <div id="unknown-all-more" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="audience-tooltip" class="audience-tooltip">
+  <div class="audience-tooltip-title" id="tooltip-title"></div>
+  <div id="tooltip-people"></div>
+</div>
+
+<footer>
+  {{COMPANY_NAME}} · Internal Influencer Intelligence · Data: LinkedIn post engagement export via PhantomBuster · {{INFLUENCER_NAME}} · {{BUILD_DATE}} · BOB: {{BOB_COUNT}} {{BOB_DESCRIPTION}}
+</footer>
+
+<script>
+const POSTS = {{POSTS_DATA}};
+const BOB = {{BOB_DATA}};
+const BOB_ALL = BOB;
+
+let selectedPostIds = new Set(); // empty = all posts selected
+let activeFilter = 'all';
+let searchQuery = '';
+
+const INTERNAL_CATEGORY = "{{INTERNAL_CATEGORY}}";
+const CAT_COLORS = {};
+CAT_COLORS[INTERNAL_CATEGORY] = '{{ACCENT_COLOR}}';
+CAT_COLORS['marketing'] = '#1D4ED8';
+CAT_COLORS['sales'] = '#7C3AED';
+CAT_COLORS['executive'] = '#92400E';
+CAT_COLORS['hr'] = '#C2410C';
+CAT_COLORS['ops'] = '#0F766E';
+CAT_COLORS['other'] = '#6B7280';
+
+function getInitials(name) {
+  return name.split(' ').slice(0,2).map(n => n[0]||'').join('').toUpperCase();
+}
+
+
+let customFrom = null, customTo = null;
+
+// Pre-fill date inputs with full data range
+const ALL_POST_DATES = POSTS.map(p => p.postDate).sort();
+document.getElementById('date-from').value = ALL_POST_DATES[0];
+document.getElementById('date-to').value = ALL_POST_DATES[ALL_POST_DATES.length - 1];
+document.getElementById('date-from').min = ALL_POST_DATES[0];
+document.getElementById('date-from').max = ALL_POST_DATES[ALL_POST_DATES.length - 1];
+document.getElementById('date-to').min = ALL_POST_DATES[0];
+document.getElementById('date-to').max = ALL_POST_DATES[ALL_POST_DATES.length - 1];
+
+// Filter posts by publish date + selection
+function getFilteredPosts() {
+  const from = customFrom, to = customTo;
+  let posts = POSTS;
+  if (from || to) posts = posts.filter(p => (!from || p.postDate >= from) && (!to || p.postDate <= to));
+  if (selectedPostIds.size > 0) posts = posts.filter(p => selectedPostIds.has(p.id));
+  return posts;
+}
+
+// Always return all engagers for a post — no date filtering on engagements
+function getFilteredEngagers(post) {
+  return post.engagers;
+}
+
+// Custom date apply button
+document.getElementById('date-apply-btn').addEventListener('click', () => {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  customFrom = from || null;
+  customTo = to || null;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('date-apply-btn').style.background = 'var(--primary)';
+  document.getElementById('date-apply-btn').style.color = 'white';
+  applyTimeFilter();
+});
+
+function resetApplyBtn() {
+  document.getElementById('date-apply-btn').style.background = '';
+  document.getElementById('date-apply-btn').style.color = '';
+}
+
+function applyTimeFilter() {
+  selectedPostIds.clear();
+  rebuildSlider();
+  updateTotals();
+  renderPost();
+}
+
+function updateTotals() {
+  const filteredPosts = getFilteredPosts();
+  const seenEngagers = new Set(), seenBob = new Set();
+  let totalBob = 0, totalComments = 0, totalLikes = 0, totalExternal = 0;
+  const bobPeople = [];
+  for (const post of filteredPosts) {
+    for (const e of post.engagers) {
+      if (!seenEngagers.has(e.profileUrl)) {
+        seenEngagers.add(e.profileUrl);
+        if (e.category !== INTERNAL_CATEGORY) totalExternal++;
+        if (e.hasCommented) totalComments++;
+        if (e.hasLiked) totalLikes++;
+        if (e.bobMatch && !seenBob.has(e.profileUrl)) {
+          seenBob.add(e.profileUrl);
+          totalBob++;
+          bobPeople.push(e);
+        }
+      }
+    }
+  }
+  document.getElementById('total-posts').textContent = filteredPosts.length;
+  document.getElementById('total-engagers').textContent = seenEngagers.size;
+  document.getElementById('total-bob').textContent = totalBob;
+  document.getElementById('total-comments').textContent = totalComments;
+  document.getElementById('total-likes').textContent = totalLikes;
+  document.getElementById('total-external').textContent = totalExternal;
+
+  // Update BOB tooltip
+  const list = document.getElementById('bob-tooltip-list');
+  if (bobPeople.length === 0) {
+    list.innerHTML = '<span class="bob-tooltip-empty">No BOB matches yet</span>';
+  } else {
+    list.innerHTML = bobPeople.map(e => {
+      const initials = e.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      return `<div class="bob-tooltip-row">
+        <div class="bob-tooltip-avatar">${initials}</div>
+        <div><div class="bob-tooltip-name">${e.name}</div><div class="bob-tooltip-company">${e.bobMatch.n}</div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// Time filter button handler
+document.querySelectorAll('.time-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const days = btn.dataset.days;
+    if (days === 'all') {
+      customFrom = null; customTo = null;
+    } else {
+      const to = new Date(ALL_POST_DATES[ALL_POST_DATES.length - 1]);
+      const from = new Date(to);
+      from.setDate(from.getDate() - parseInt(days));
+      customFrom = from.toISOString().slice(0,10);
+      customTo = to.toISOString().slice(0,10);
+      document.getElementById('date-from').value = customFrom;
+      document.getElementById('date-to').value = customTo;
+    }
+    resetApplyBtn();
+    applyTimeFilter();
+  });
+});
+
+function rebuildSlider() {
+  // Always show all time-filtered posts regardless of selection
+  const from = customFrom, to = customTo;
+  let sliderPosts = POSTS;
+  if (from || to) sliderPosts = sliderPosts.filter(p => (!from || p.postDate >= from) && (!to || p.postDate <= to));
+  const slider = document.getElementById('post-slider');
+  slider.innerHTML = '';
+  const maxEng = sliderPosts.length ? sliderPosts[0].engager_count : 1;
+  sliderPosts.forEach((post, i) => {
+    const globalIdx = POSTS.indexOf(post);
+    const pct = Math.round(post.engager_count / maxEng * 100);
+    const pill = document.createElement('div');
+    pill.className = 'post-pill' + (selectedPostIds.has(post.id) ? ' active' : '');
+    pill.innerHTML = `
+      <div class="post-pill-rank">#${i+1} · ${post.postDate.slice(0,7)}</div>
+      <div class="post-pill-title">${post.title}</div>
+      <div class="post-pill-stats">
+        <span class="post-pill-stat highlight">👥 ${post.engager_count}</span>
+        <span class="post-pill-stat">💬 ${post.comment_count}</span>
+        <span class="post-pill-stat">👍 ${post.like_count}</span>
+        ${post.bob_count > 0 ? `<span class="post-pill-stat" style="color:var(--bob-gold)">📋 ${post.bob_count}</span>` : ''}
+      </div>
+      <div class="post-pill-bar" style="width:${pct}%"></div>`;
+    pill.addEventListener('click', (e) => selectPost(globalIdx, e.metaKey || e.ctrlKey));
+    slider.appendChild(pill);
+  });
+}
+
+
+// Slider built by rebuildSlider()
+
+function selectPost(idx, multi) {
+  const post = POSTS[idx];
+  // Any click toggles the post on/off; hold nothing selected to see all
+  if (selectedPostIds.has(post.id)) {
+    selectedPostIds.delete(post.id);
+  } else {
+    selectedPostIds.add(post.id);
+  }
+  rebuildSlider();
+  activeFilter = 'all';
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+  renderPost();
+}
+
+function renderPost() {
+  const filteredPosts = getFilteredPosts();
+  // If multiple posts selected, merge engagers (deduplicated by profileUrl)
+  const allPeople = [];
+  const seenUrls = new Set();
+  for (const post of filteredPosts) {
+    for (const e of post.engagers) {
+      if (!seenUrls.has(e.profileUrl)) {
+        seenUrls.add(e.profileUrl);
+        allPeople.push(e);
+      }
+    }
+  }
+  // For single-post view, use that post; for multi use first
+  const post = filteredPosts.length === 1 ? filteredPosts[0] : (filteredPosts[0] || POSTS[0]);
+  const people = selectedPostIds.size === 1 ? post.engagers : allPeople;
+
+  // Update post preview
+  document.getElementById('post-preview-text').textContent = post.content;
+  document.getElementById('post-preview-text').classList.remove('expanded');
+  document.getElementById('post-expand-btn').textContent = 'Read more →';
+  document.getElementById('post-preview-link').href = post.url;
+
+  // Stats
+  document.getElementById('stat-engagers').textContent = people.length;
+  document.getElementById('stat-bob').textContent = people.filter(p => p.bobMatch).length;
+  document.getElementById('stat-comments').textContent = people.filter(p => p.hasCommented).length;
+  document.getElementById('stat-likes').textContent = people.filter(p => p.hasLiked).length;
+  document.getElementById('stat-external').textContent = people.filter(p => p.category !== INTERNAL_CATEGORY).length;
+
+  // BOB section
+  renderBob(people, post);
+
+  // Person cards
+  renderPeople(people);
+
+  // Audience breakdown
+  renderAudience(people);
+
+  // Demand signals
+  renderSignals(people);
+
+  // Target list
+  renderTargetList(people);
+
+  // Unknown company review
+  renderUnknownCompanies(people);
+}
+
+function renderBob(people, post) {
+  const bobMatches = people.filter(p => p.bobMatch);
+  const chip = document.getElementById('bob-chip-engaged');
+  const body = document.getElementById('bob-body');
+
+  // Aggregate by account
+  const accountMap = {};
+  for (const p of bobMatches) {
+    const key = p.bobMatch.n;
+    if (!accountMap[key]) accountMap[key] = { bob: p.bobMatch, people: [], totalEngage: 0 };
+    accountMap[key].people.push(p);
+    accountMap[key].totalEngage += (p.hasCommented ? 2 : 0) + (p.hasLiked ? 1 : 0);
+  }
+
+  if (Object.keys(accountMap).length > 0) {
+    chip.textContent = Object.keys(accountMap).length + ' account(s) engaged ✓';
+    chip.className = 'bob-chip engaged';
+    let html = '<div class="bob-accounts-grid">';
+    for (const [key, data] of Object.entries(accountMap)) {
+      const fire = '🔥'.repeat(data.bob.f);
+      const tier = data.bob.t ? ` · Tier ${data.bob.t}` : '';
+      html += `<div class="bob-account-card">
+        <div class="bob-account-top">
+          <div class="bob-account-icon">🏢</div>
+          <div class="bob-account-name">${data.bob.n}</div>
+          <span>${fire}</span>
+        </div>
+        <div class="bob-account-stats">
+          <div class="bob-stat highlight">${data.people.length} person${data.people.length>1?'s':''}</div>
+          <div class="bob-stat">${data.totalEngage} engagement${data.totalEngage>1?'s':''}</div>
+          ${data.bob.t ? `<div class="bob-stat">Tier ${data.bob.t}</div>` : ''}
+        </div>
+        <div class="bob-engager-list">${data.people.map(p=>`
+          <div class="bob-engager"><div class="bob-engager-dot"></div>
+            <a href="${p.profileUrl}" target="_blank" style="color:var(--text);text-decoration:none;font-weight:600;font-size:11px">${p.name}</a>
+            <span style="color:var(--soft);font-size:10px">${p.hasCommented?'💬':'👍'}</span>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  } else {
+    chip.textContent = '0 engaged this post';
+    chip.className = 'bob-chip zero';
+    const top3 = BOB.filter(b => b.f === 3).slice(0, 16);
+    body.innerHTML = `
+      <div class="bob-zero-state">
+        <div class="bob-zero-icon">📭</div>
+        <div class="bob-zero-title">No BOB accounts engaged with this post</div>
+        <div class="bob-zero-sub">{{BOB_COUNT}} {{BOB_DESCRIPTION}} tracked. When someone from a target account engages, they appear here grouped by company.</div>
+        <div class="bob-zero-progress">
+          <div class="bob-zero-progress-label"><span>BOB Coverage</span><span>0 / {{BOB_COUNT}}</span></div>
+          <div class="bob-progress-bar-wrap"><div class="bob-progress-bar" style="width:0.07%"></div></div>
+        </div>
+      </div>
+      <div class="bob-watchlist">
+        <div class="bob-watchlist-title">🔥🔥🔥 Accounts to watch</div>
+        <div class="bob-watchlist-grid">${top3.map(b=>`<div class="bob-watch-chip">🔥🔥🔥 ${b.n}</div>`).join('')}</div>
+      </div>`;
+  }
+}
+
+function buildCard(p) {
+  const color = CAT_COLORS[p.category] || '#6B7280';
+  let tags = '';
+  if (p.bobMatch && p.category==='hr') tags += '<span class="tag tag-hot-intent">🔥 Hot Intent</span>';
+  if (p.bobMatch) tags += `<span class="tag tag-bob">📋 BOB ${'🔥'.repeat(p.bobMatch.f)}</span>`;
+  if (p.hasCommented && p.hasLiked) tags += '<span class="tag tag-commented">💬 Commented</span>';
+  else if (p.hasCommented) tags += '<span class="tag tag-commented">💬 Commented</span>';
+  else if (p.hasLiked) tags += '<span class="tag tag-liked">👍 Liked</span>';
+  if (p.category===INTERNAL_CATEGORY) tags += '<span class="tag tag-internal">{{COMPANY_NAME}}</span>';
+  else if (p.category==='executive') tags += '<span class="tag tag-exec">Executive</span>';
+  else if (p.category==='hr') tags += '<span class="tag tag-hr">HR/People</span>';
+
+  const comment = p.comment ? `<div class="comment-bubble">"${p.comment.slice(0,160)}${p.comment.length>160?'…':''}"${p.commentUrl?`<a href="${p.commentUrl}" target="_blank"> View →</a>`:''}</div>` : '';
+  const bobLabel = p.bobMatch ? `<div class="bob-match-label">📋 ${p.bobMatch.n}${p.bobMatch.t?' · Tier '+p.bobMatch.t:''}</div>` : '';
+  const sc = p.score >= 7 ? '#E8340A' : p.score >= 5 ? '#D97706' : '#9CA3AF';
+  const cls = (p.bobMatch && p.category==='hr') ? 'is-hot-intent' : p.bobMatch ? 'is-bob' : p.isTargetAccount ? 'is-target' : '';
+
+  return `<div class="person-card ${cls}"
+       data-category="${p.category}" data-commented="${p.hasCommented}"
+       data-target="${p.isTargetAccount}" data-bob="${!!p.bobMatch}"
+       data-hr="${p.category==='hr'}"
+       data-name="${p.name.toLowerCase()}" data-occ="${p.occupation.toLowerCase()}">
+    <div class="person-avatar" style="background:linear-gradient(135deg,${color},${color}cc)">${getInitials(p.name)}</div>
+    <div class="person-body">
+      <div class="person-top">
+        <a class="person-name" href="${p.profileUrl}" target="_blank">${p.name}</a>
+        ${p.degree ? `<span style="font-size:9px;color:var(--soft);font-weight:600">${p.degree}</span>` : ''}
+      </div>
+      <div class="person-occ">${p.occupation}</div>
+      <div class="tags">${tags}</div>
+      ${comment}${bobLabel}
+    </div>
+    <div class="score-badge" style="background:${sc}18;color:${sc};border:1.5px solid ${sc}33">${p.score}</div>
+  </div>`;
+}
+
+const ENGAGER_LIMIT = 20;
+let engagerLimitExpanded = false;
+
+function toggleEngagerLimit() {
+  engagerLimitExpanded = !engagerLimitExpanded;
+  applyFilters();
+}
+
+function renderPeople(people) {
+  engagerLimitExpanded = false;
+  document.getElementById('people-list').innerHTML = people.map(buildCard).join('');
+  document.getElementById('results-count').textContent = people.length;
+  applyFilters();
+}
+
+function renderAudience(people) {
+  const counts = {};
+  counts[INTERNAL_CATEGORY] = 0;
+  counts['marketing'] = 0;
+  counts['sales'] = 0;
+  counts['executive'] = 0;
+  counts['hr'] = 0;
+  counts['other'] = 0;
+  for (const p of people) {
+    if (counts[p.category] !== undefined) counts[p.category]++;
+    else counts.other++;
+  }
+  const total = people.length || 1;
+  const cats = [
+    {key:INTERNAL_CATEGORY,label:'{{COMPANY_NAME}} team',color:'var(--accent)'},
+    {key:'marketing',label:'Marketing',color:'var(--primary)'},
+    {key:'sales',label:'Sales / BD',color:'#7C3AED'},
+    {key:'executive',label:'Executive / Founder',color:'#F59E0B'},
+    {key:'hr',label:'HR / People',color:'#EA580C'},
+    {key:'other',label:'Other',color:'#9CA3AF'}
+  ];
+  // Sort highest count first so the most prominent audience always appears on top
+  cats.sort((a, b) => counts[b.key] - counts[a.key]);
+  document.getElementById('audience-breakdown').innerHTML = cats.map(c => `
+    <div class="audience-row" data-cat="${c.key}">
+      <div class="audience-dot" style="background:${c.color}"></div>
+      <div class="audience-label">${c.label}</div>
+      <div class="audience-bar-wrap"><div class="audience-bar" style="width:${Math.round(counts[c.key]/total*100)}%;background:${c.color}"></div></div>
+      <div class="audience-count">${counts[c.key]}</div>
+    </div>`).join('');
+  setupAudienceTooltips(people);
+}
+
+function renderSignals(people) {
+  // Only surface individual engagers who are in the target audience:
+  // HR, executive, or BOB-matched externals who left a comment.
+  const top = people.filter(p =>
+    p.category !== INTERNAL_CATEGORY &&
+    p.hasCommented &&
+    (p.category === 'hr' || p.category === 'executive' || p.bobMatch)
+  ).slice(0, 4);
+  const bob = people.filter(p => p.bobMatch);
+  const hotIntent = people.filter(p => p.bobMatch && p.category === 'hr');
+  const hrBuyers = people.filter(p => p.category === 'hr' && p.category !== INTERNAL_CATEGORY);
+  const signals = [];
+  if (hotIntent.length > 0) {
+    signals.push(`<div class="signal-item hot" data-tip="These people work in HR roles at one of {{COMPANY_NAME}}'s Book of Business accounts — the strongest buying signal possible."><span class="signal-icon">🔥</span>
+      <div class="signal-text">${hotIntent.length} Hot Intent — BOB + HR</div>
+      <div class="signal-sub">${hotIntent.map(p=>p.name.split(' ')[0]).join(', ').slice(0,60)} · HR buyers at target accounts</div></div>`);
+  }
+  if (hrBuyers.length > 0 && hrBuyers.length !== hotIntent.length) {
+    signals.push(`<div class="signal-item warm" data-tip="HR professionals who engaged with this post — your core target audience. They may work at BOB accounts, but their company isn't visible in their headline."><span class="signal-icon">👥</span>
+      <div class="signal-text">${hrBuyers.length} HR Buyer${hrBuyers.length>1?'s':''} engaged</div>
+      <div class="signal-sub">${hrBuyers.map(p=>p.name.split(' ')[0]).join(', ').slice(0,60)}</div></div>`);
+  }
+  for (const p of top.slice(0,2)) {
+    const type = p.score >= 7 ? 'hot' : 'warm';
+    const icon = p.hasCommented ? '💬' : '🎯';
+    const reason = p.hasCommented && p.bobMatch ? 'Commented on your post and works at a BOB target account.' : p.hasCommented ? 'Left a comment — highest engagement signal on LinkedIn.' : p.bobMatch ? 'Works at a BOB target account and liked your post.' : 'High engagement score based on interaction and profile signals.';
+    signals.push(`<div class="signal-item ${type}" data-tip="${reason}"><span class="signal-icon">${icon}</span>
+      <div class="signal-text">${p.name}</div>
+      <div class="signal-sub">${p.occupation.split('|')[0].trim().slice(0,60)}</div></div>`);
+  }
+  if (bob.length > 0) {
+    signals.push(`<div class="signal-item note" data-tip="These engagers' LinkedIn headlines mention a company on {{COMPANY_NAME}}'s Book of Business — confirmed target account engagement."><span class="signal-icon">📋</span>
+      <div class="signal-text">${bob.length} BOB account${bob.length>1?'s':''} engaged</div>
+      <div class="signal-sub">${bob.map(p=>p.bobMatch.n).join(', ').slice(0,60)}</div></div>`);
+  }
+  if (signals.length === 0) {
+    signals.push(`<div class="signal-item note" data-tip="No strong buying signals detected for this post — most engagement came from internal {{COMPANY_NAME}} team members."><span class="signal-icon">💡</span>
+      <div class="signal-text">Mostly internal engagement</div>
+      <div class="signal-sub">{{COMPANY_NAME}} team was the main audience for this post</div></div>`);
+  }
+  document.getElementById('demand-signals').innerHTML = `<div class="signal-list">${signals.join('')}</div>`;
+}
+
+function buildUnknownItems(arr) {
+  return arr.map(p => `<a class="unknown-item" href="${p.profileUrl}" target="_blank">
+      <div class="unknown-avatar">${getInitials(p.name)}</div>
+      <div class="unknown-info">
+        <div class="unknown-name">${p.name}</div>
+        <div class="unknown-occ">${p.occupation.slice(0,70)}</div>
+      </div>
+      <span class="unknown-link">↗</span>
+    </a>`).join('');
+}
+
+function toggleSeeMore(id) {
+  const more = document.getElementById(id + '-more');
+  const btn  = document.getElementById(id + '-more-btn');
+  if (!more) return;
+  const expanded = more.style.display !== 'none';
+  more.style.display = expanded ? 'none' : '';
+  btn.textContent = expanded ? `Show ${more.children.length} more ▼` : 'Show less ▲';
+}
+
+function renderUnknownCompanies(people) {
+  const card = document.getElementById('unknown-card');
+  if (!card) return;
+  const LIMIT = 10; // show 10 per column (20 total) before "See more"
+  const unknownAll = people.filter(p => p.unknownCompany && p.category !== INTERNAL_CATEGORY);
+  const unknownHR  = unknownAll.filter(p => p.category === 'hr');
+  if (unknownAll.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const fillSection = (arr, listId, moreId, btnId) => {
+    const visible = arr.slice(0, LIMIT);
+    const hidden  = arr.slice(LIMIT);
+    document.getElementById(listId).innerHTML = arr.length ? buildUnknownItems(visible) : '<div class="unknown-empty">None</div>';
+    const moreEl = document.getElementById(moreId);
+    const btnEl  = document.getElementById(btnId);
+    if (hidden.length > 0) {
+      moreEl.innerHTML = buildUnknownItems(hidden);
+      moreEl.style.display = 'none';
+      btnEl.textContent = `Show ${hidden.length} more ▼`;
+      btnEl.style.display = '';
+    } else {
+      btnEl.style.display = 'none';
+    }
+  };
+
+  document.getElementById('unknown-hr-title').textContent  = `HR — company unknown (${unknownHR.length})`;
+  document.getElementById('unknown-all-title').textContent = `All — company unknown (${unknownAll.length})`;
+  fillSection(unknownHR,  'unknown-hr-list',  'unknown-hr-more',  'unknown-hr-more-btn');
+  fillSection(unknownAll, 'unknown-all-list', 'unknown-all-more', 'unknown-all-more-btn');
+}
+
+function renderTargetList(people) {
+  const el = document.getElementById('target-list');
+  if (!el) return; // element removed from layout
+  const targets = people.filter(p => (p.isTargetAccount || p.bobMatch) && p.category !== INTERNAL_CATEGORY).slice(0, 7);
+  el.innerHTML = targets.map(p => `
+    <a class="target-item" href="${p.profileUrl}" target="_blank">
+      <div class="t-avatar">${getInitials(p.name)}</div>
+      <div><div class="t-name">${p.name}</div><div class="t-role">${p.occupation.split('|')[0].split('@')[0].trim().slice(0,42)}</div></div>
+    </a>`).join('') || '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">No target accounts this post</div>';
+}
+
+// Filters
+function applyFilters() {
+  const cards = document.querySelectorAll('.person-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const cat = card.dataset.category;
+    const commented = card.dataset.commented === 'true';
+    const isTarget = card.dataset.target === 'true';
+    const isBob = card.dataset.bob === 'true';
+    let show = true;
+    if (activeFilter === 'bob') show = isBob;
+    else if (activeFilter === 'target') show = isTarget || isBob;
+    else if (activeFilter === 'commented') show = commented;
+    else if (activeFilter === 'external') show = cat !== INTERNAL_CATEGORY;
+    else if (activeFilter === 'hot-intent') show = card.dataset.hr === 'true' && card.dataset.bob === 'true';
+    else if (['marketing','sales','executive','hr'].includes(activeFilter)) show = cat === activeFilter;
+    if (show && searchQuery) {
+      show = card.dataset.name.includes(searchQuery) || card.dataset.occ.includes(searchQuery);
+    }
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  // Apply 20-item limit
+  const btn = document.getElementById('engager-see-more-btn');
+  const total = visible;  // total matching the filter — always shown in the count
+  if (total > ENGAGER_LIMIT && !engagerLimitExpanded) {
+    let shown = 0;
+    cards.forEach(card => {
+      if (!card.classList.contains('hidden')) {
+        shown++;
+        if (shown > ENGAGER_LIMIT) card.classList.add('hidden');
+      }
+    });
+    btn.textContent = `Show ${total - ENGAGER_LIMIT} more ▼`;
+    btn.style.display = '';
+  } else if (total > ENGAGER_LIMIT && engagerLimitExpanded) {
+    btn.textContent = 'Show less ▲';
+    btn.style.display = '';
+  } else {
+    btn.style.display = 'none';
+  }
+
+  document.getElementById('results-count').textContent = total;
+  document.getElementById('no-results').classList.toggle('hidden', visible > 0);
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    applyFilters();
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase().trim();
+  applyFilters();
+});
+
+// Post expand
+function toggleExpand() {
+  const el = document.getElementById('post-preview-text');
+  const btn = document.getElementById('post-expand-btn');
+  el.classList.toggle('expanded');
+  btn.textContent = el.classList.contains('expanded') ? 'Show less ↑' : 'Read more →';
+}
+
+// Audience tooltips (re-setup on each post render)
+const tooltip = document.getElementById('audience-tooltip');
+const tooltipTitle = document.getElementById('tooltip-title');
+const tooltipPeople = document.getElementById('tooltip-people');
+
+function setupAudienceTooltips(people) {
+  document.querySelectorAll('.audience-row[data-cat]').forEach(row => {
+    row.onmouseenter = (e) => {
+      const cat = row.dataset.cat;
+      const catPeople = people.filter(p => p.category === cat);
+      if (!catPeople.length) return;
+      const color = CAT_COLORS[cat] || '#6B7280';
+      tooltipTitle.textContent = row.querySelector('.audience-label').textContent;
+      tooltipTitle.style.color = color;
+      tooltipPeople.innerHTML = catPeople.map(p => `
+        <div class="audience-tooltip-person">
+          <div class="audience-tooltip-avatar" style="background:${color}">${getInitials(p.name)}</div>
+          <div>
+            <div class="audience-tooltip-name">${p.name} <span style="font-weight:400;color:var(--soft)">${p.hasCommented?'💬':'👍'}</span></div>
+            <div class="audience-tooltip-role">${p.occupation.split('|')[0].trim().slice(0,38)}</div>
+          </div>
+        </div>`).join('');
+      positionTooltip(e);
+      tooltip.classList.add('visible');
+    };
+    row.onmousemove = positionTooltip;
+    row.onmouseleave = () => tooltip.classList.remove('visible');
+  });
+}
+
+function positionTooltip(e) {
+  const tw = tooltip.offsetWidth || 240;
+  const th = tooltip.offsetHeight || 180;
+  let x = e.clientX - tw - 12;
+  let y = e.clientY - 20;
+  if (x < 8) x = e.clientX + 12;
+  const maxY = window.innerHeight - th - 8;
+  if (y > maxY) y = maxY;
+  if (y < 8) y = 8;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+// Init
+rebuildSlider();
+updateTotals();
+renderPost();
+</script>
+</body>
+</html>
