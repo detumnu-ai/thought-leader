@@ -42,34 +42,35 @@ Collect the following information from the user:
 
 ## Phase 2: Get the Data
 
-Reference `${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/data-format.md` for full CSV specifications.
+Reference `${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/data-format.md` for full specifications.
 
-**Guide the user through PhantomBuster setup:**
+**Guide the user through the 4-Phantom PhantomBuster pipeline:**
 
-1. Tell them they need two PhantomBuster Phantoms:
-   - **LinkedIn Post Likers** -- extracts everyone who liked their posts
-   - **LinkedIn Post Commenters** -- extracts everyone who commented + their comment text
-2. Input for both Phantoms: a list of LinkedIn post URLs they want to track
-3. Run both Phantoms, then download the CSV results from each
-4. Merge the two exports into a single `engagers.csv` (see data-format.md for merging instructions)
+1. **Post Scraper** — Scrape the thought leader's posts to get content + dates + URLs
+   - Input: The influencer's LinkedIn profile URL
+   - Set date range (e.g., posts from December onwards)
+2. **Likers Export** — Scrape everyone who liked each post
+   - Input: Post URLs from step 1
+3. **Commenters Export** — Scrape everyone who commented
+   - Input: Same post URLs from step 1 (run in parallel with step 2)
+4. **Profile Scraper** — Enrich profiles from steps 2+3 with full company names + connection degree
+   - Input: Deduplicated profile URLs from the liker + commenter exports
 
-**Guide them through preparing the 3 CSV files:**
+**Guide them through the Data Input spreadsheet:**
 
-1. **posts.csv** -- They create this manually with:
-   - `post_id`: The activity ID from each LinkedIn post URL
-   - `post_url`: Full URL
-   - `title`: First ~50 characters / hook of the post
-   - `content`: Full post text
-   - `post_date`: Publication date (YYYY-MM-DD)
+1. Make a copy of the template: `${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/data-input-template.xlsx`
+2. Paste each PhantomBuster CSV export into the matching sheet:
+   - **Export Posts** — paste Post Scraper output
+   - **Export Likers** — paste Likers output
+   - **Export Commenters** — paste Commenters output
+   - **Profile URLs to scrape** — helper sheet for deduplicating profile URLs
+   - **Export Scraped Profiles** — paste Profile Scraper output
+   - **Book of Business** — add target accounts (company_name, fire 0-3, tier A/B/C)
+3. The BOB sheet can come from their CRM export or a manual list
 
-2. **engagers.csv** -- From the merged PhantomBuster export with:
-   - `post_id`, `name`, `occupation`, `company`, `profile_url`
-   - `has_liked`, `has_commented`, `comment`, `comment_url`, `degree`
+**Then ask:** "Where have you saved the XLSX file? Give me the file path."
 
-3. **bob.csv** -- From their CRM or a manual list with:
-   - `company_name` (required), `fire` (priority 0-3), `tier` (A/B/C)
-
-**Then ask:** "Where have you placed the 3 CSV files? Give me the file paths."
+> **Alternative:** If the user prefers CSV files, they can prepare 3 separate files (posts.csv, engagers.csv, bob.csv) — see data-format.md for column specs.
 
 ---
 
@@ -77,6 +78,16 @@ Reference `${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/data-forma
 
 Run the build script with the user's data:
 
+**XLSX mode (recommended):**
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/build-dashboard.py \
+  --config ${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/client-configs/{client-slug}.json \
+  --xlsx {xlsx-path} \
+  --template ${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/dashboard-template.html \
+  --output ./output/index.html
+```
+
+**CSV mode (alternative):**
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/build-dashboard.py \
   --config ${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/client-configs/{client-slug}.json \
@@ -87,7 +98,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/engagement-tracker/references/build-dashboa
   --output ./output/index.html
 ```
 
-Replace `{client-slug}`, `{posts-csv-path}`, `{engagers-csv-path}`, and `{bob-csv-path}` with the actual paths.
+Replace the `{...}` placeholders with actual paths. XLSX mode requires `openpyxl` (`pip install openpyxl`).
 
 **After the build completes, show a summary:**
 
@@ -158,7 +169,7 @@ Share the URL and password with your stakeholders.
 ## Important Notes
 
 - **Privacy**: All data processing happens locally. No engagement data is sent to external APIs (beyond PhantomBuster's initial collection).
-- **Dependencies**: The build script uses only Python standard library (no pip install needed). Requires Python 3.6+.
+- **Dependencies**: The build script uses Python standard library for CSV mode. XLSX mode requires `openpyxl` (`pip install openpyxl`). Requires Python 3.6+.
 - **Self-contained output**: The dashboard is a single HTML file with no external dependencies except Google Fonts. It works offline after initial load.
 - **Password protection**: The built-in password gate is client-side JavaScript. This is sufficient for internal dashboards. For server-side auth, use Netlify Pro with Basic Auth.
 - **Updating**: To add new posts or engagers, update the CSV files and re-run from Phase 3. The build script generates a fresh dashboard each time.

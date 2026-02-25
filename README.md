@@ -21,8 +21,8 @@ The guided workflow walks you through configuration, data preparation, building,
 ## How It Works
 
 1. **Configure** — Set your company name, influencer, brand colors, and target audience
-2. **Get the data** — Export engagement data from PhantomBuster + prepare your Book of Business
-3. **Build** — The build script processes CSVs and generates a self-contained HTML dashboard
+2. **Get the data** — Run 4 PhantomBuster Phantoms, paste exports into the Data Input spreadsheet
+3. **Build** — The build script reads the XLSX and generates a self-contained HTML dashboard
 4. **Preview** — Review locally in your browser
 5. **Deploy** — Drag & drop to Netlify for a live, password-protected URL
 
@@ -73,24 +73,28 @@ Enrich the profiles from Steps 2 and 3 with full company names, titles, and conn
 - **Output:** Enriched CSV with current company, full title, connection degree
 - **Why:** LinkedIn headlines are often incomplete (missing company name). The profile scraper fills in the gaps, which improves BOB matching accuracy.
 
-### Preparing the 3 Input CSVs
+### Organizing Your Data (XLSX Template)
 
-After running all 4 Phantoms, you prepare 3 files for the build script:
+The plugin includes a **Data Input spreadsheet** (`data-input-template.xlsx`) with 6 pre-formatted sheets:
 
-| File | Source | What it contains |
-|------|--------|-----------------|
-| `posts.csv` | From Phantom 1 (Post Scraper) | Post IDs, URLs, titles, content, dates |
-| `engagers.csv` | Merge Phantoms 2 + 3, enrich with Phantom 4 | All engagement data per post |
-| `bob.csv` | Your CRM / target account list | Company names with priority scores |
+| Sheet | What to paste | Source |
+|-------|---------------|--------|
+| Export Posts | Post Scraper output | Phantom 1 |
+| Export Likers | Likers output | Phantom 2 |
+| Export Commenters | Commenters output | Phantom 3 |
+| Profile URLs to scrape | Deduplicated profile URLs | Helper (from Phantoms 2+3) |
+| Export Scraped Profiles | Profile Scraper output | Phantom 4 |
+| Book of Business | Your target account list | CRM export or manual |
 
-**Merging likers + commenters into `engagers.csv`:**
-1. Take the likers CSV (Phantom 2) — add column `has_liked=true`, `has_commented=false`
-2. Take the commenters CSV (Phantom 3) — add column `has_liked=false`, `has_commented=true`
-3. Combine both into one file
-4. Enrich with company/degree data from the Profile Scraper (Phantom 4)
-5. For people who appear in both, you can merge into a single row or keep separate — the build script deduplicates by profile URL within each post
+**Workflow:**
+1. Make a copy of `data-input-template.xlsx` for your client
+2. Run each Phantom, download the CSV, paste it into the matching sheet
+3. Add your target accounts to the "Book of Business" sheet
+4. Run the build script with `--xlsx your-data.xlsx`
 
-See `skills/engagement-tracker/references/data-format.md` for full column specs, column mapping, and examples.
+The build script reads the PhantomBuster columns directly — no manual column mapping or CSV merging needed. It auto-merges likers + commenters, enriches with profile data, and handles deduplication.
+
+**Alternative:** You can also use 3 separate CSV files (`--posts`, `--engagers`, `--bob`) if you prefer. See `skills/engagement-tracker/references/data-format.md` for CSV column specs.
 
 ## CSV Format Reference
 
@@ -171,22 +175,41 @@ The dashboard includes a built-in password gate (set in your client config). See
 
 Using the included `_example.json` config (fictional "Acme Corp" with influencer "Jane Smith"):
 
+**With XLSX (recommended):**
 ```bash
-python3 skills/engagement-tracker/references/build-dashboard.py \
-  --config skills/engagement-tracker/references/client-configs/_example.json \
+python3 build-dashboard.py \
+  --config client-config.json \
+  --xlsx data-input.xlsx \
+  --template dashboard-template.html \
+  --output ./output/index.html
+```
+
+**With separate CSVs:**
+```bash
+python3 build-dashboard.py \
+  --config client-config.json \
   --posts posts.csv \
   --engagers engagers.csv \
   --bob bob.csv \
-  --template skills/engagement-tracker/references/dashboard-template.html \
+  --template dashboard-template.html \
   --output ./output/index.html
 ```
 
 Output:
 ```
+Reading XLSX: data-input.xlsx
+  Posts sheet:      8 posts
+  Likers sheet:     312 likers
+  Commenters sheet: 45 commenters
+  Profiles sheet:   280 profiles (enrichment)
+  BOB sheet:        500 target accounts
+  Total engagers:   357 (before dedup)
+
 Dashboard built successfully!
-  Posts:        2
-  Engagers:     12
-  BOB matches:  7
+  Posts:        8
+  Engagers:     324
+  BOB matches:  18
+  BOB total:    500
   Output:       ./output/index.html
 ```
 

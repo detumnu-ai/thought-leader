@@ -2,10 +2,17 @@
 """
 Build script for the Engagement Tracker dashboard.
 
-Reads a client config JSON, 3 CSV files (posts, engagers, book of business),
+Reads a client config JSON, data inputs (CSV files or a single XLSX workbook),
 and an HTML template. Processes the data and produces a self-contained HTML dashboard.
 
-Usage:
+Usage with XLSX (recommended):
+    python3 build-dashboard.py \
+        --config client-config.json \
+        --xlsx data-input.xlsx \
+        --template dashboard-template.html \
+        --output ./output/index.html
+
+Usage with CSVs:
     python3 build-dashboard.py \
         --config client-config.json \
         --posts posts.csv \
@@ -441,26 +448,36 @@ def main():
         description="Build the Engagement Tracker HTML dashboard."
     )
     parser.add_argument("--config", required=True, help="Path to client config JSON")
-    parser.add_argument("--posts", required=True, help="Path to posts CSV")
-    parser.add_argument("--engagers", required=True, help="Path to engagers CSV")
-    parser.add_argument("--bob", required=True, help="Path to Book of Business CSV")
+    parser.add_argument("--xlsx", help="Path to Data Input XLSX (replaces --posts/--engagers/--bob)")
+    parser.add_argument("--posts", help="Path to posts CSV")
+    parser.add_argument("--engagers", help="Path to engagers CSV")
+    parser.add_argument("--bob", help="Path to Book of Business CSV")
     parser.add_argument("--template", required=True, help="Path to HTML template")
     parser.add_argument("--output", required=True, help="Output HTML file path")
     args = parser.parse_args()
+
+    # Validate: either --xlsx or all three CSVs
+    if not args.xlsx and not (args.posts and args.engagers and args.bob):
+        parser.error("Provide either --xlsx or all three: --posts, --engagers, --bob")
 
     # Load config
     print(f"Loading config: {args.config}")
     config = load_config(args.config)
 
-    # Parse CSVs
-    print(f"Parsing posts: {args.posts}")
-    posts = parse_posts_csv(args.posts)
+    if args.xlsx:
+        # XLSX mode: read all data from one workbook
+        print(f"Reading XLSX: {args.xlsx}")
+        posts, engagers, bob = parse_xlsx(args.xlsx)
+    else:
+        # CSV mode: read from separate files
+        print(f"Parsing posts: {args.posts}")
+        posts = parse_posts_csv(args.posts)
 
-    print(f"Parsing engagers: {args.engagers}")
-    engagers = parse_engagers_csv(args.engagers)
+        print(f"Parsing engagers: {args.engagers}")
+        engagers = parse_engagers_csv(args.engagers)
 
-    print(f"Parsing BOB: {args.bob}")
-    bob = parse_bob_csv(args.bob)
+        print(f"Parsing BOB: {args.bob}")
+        bob = parse_bob_csv(args.bob)
 
     # Process data
     print("Processing data...")
@@ -491,6 +508,171 @@ def main():
     print(f"  BOB matches:  {counts['bob_matches']}")
     print(f"  BOB total:    {counts['bob_total']}")
     print(f"  Output:       {os.path.abspath(args.output)}")
+
+
+# ---------------------------------------------------------------------------
+# XLSX parsing (reads PhantomBuster export sheets directly)
+# ---------------------------------------------------------------------------
+
+def parse_xlsx(path: str) -> tuple:
+    """
+    Read the Data Input XLSX workbook with PhantomBuster export sheets.
+    Returns (posts, engagers, bob) in the same format as the CSV parsers.
+
+    Expected sheets:
+      - 'Export Posts'            → posts data
+      - 'Export Likers'           → liker engagements
+      - 'Export Commenters'       → commenter engagements
+      - 'Export Scraped Profiles' → profile enrichment (optional)
+      - 'Book of Business'        → BOB target accounts (optional)
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        raise ImportError(
+            "openpyxl is required for --xlsx mode. Install it with: pip install openpyxl"
+        )
+
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+
+    def sheet_to_dicts(sheet_name):
+        if sheet_name not in wb.sheetnames:
+            return []
+        ws = wb[sheet_name]
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            return []
+        headers = [str(h).strip() if h else "" for h in rows[0]]
+        return [
+            {h: (str(v).strip() if v is not None else "") for h, v in zip(headers, row)}
+            for row in rows[1:]
+            if any(v is not None for v in row)
+        ]
+
+    # --- Load profile enrichment data for lookup ---
+    profiles_raw = sheet_to_dicts("Export Scraped Profiles")
+    profile_lookup = {}
+    for p in profiles_raw:
+        url = p.get("profileUrl", "") or p.get("linkedinProfileUrl", "")
+        if url:
+            profile_lookup[url.rstrip("/")] = p
+
+    def enrich(profile_url, field_map):
+        """Look up enrichment data for a profile URL."""
+        profile = profile_lookup.get(profile_url.rstrip("/"), {})
+        result = {}
+        for our_key, pb_keys in field_map.items():
+            for pk in pb_keys:
+                val = profile.get(pk, "")
+                if val:
+                    result[our_key] = val
+                    break
+        return result
+
+    # --- Parse Posts ---
+    def extract_post_id(url):
+        m = re.search(r"activity:(\d+)", url or "")
+        return m.group(1) if m else (url or "").split("/")[-1].strip("/")
+
+    posts_raw = sheet_to_dicts("Export Posts")
+    posts = []
+    for row in posts_raw:
+        url = row.get("postUrl", "")
+        if not url:
+            continue
+        content = row.get("postContent", "")
+        title = content[:40] + ("..." if len(content) > 40 else "") if content else ""
+        date_val = row.get("postDate", "")
+        # Handle datetime-like strings
+        if date_val and "T" in date_val:
+            date_val = date_val.split("T")[0]
+        elif date_val and " " in date_val:
+            date_val = date_val.split(" ")[0]
+        posts.append({
+            "post_id": extract_post_id(url),
+            "post_url": url,
+            "title": title,
+            "content": content,
+            "post_date": date_val,
+        })
+
+    # --- Parse Likers ---
+    likers_raw = sheet_to_dicts("Export Likers")
+    engagers = []
+    for row in likers_raw:
+        url = row.get("postUrl", "")
+        profile_url = row.get("profileLink", "")
+        if not profile_url:
+            continue
+        enriched = enrich(profile_url, {
+            "company": ["companyName"],
+            "degree": ["connectionDegree"],
+            "occupation": ["linkedinHeadline"],
+        })
+        engagers.append({
+            "post_id": extract_post_id(url),
+            "name": row.get("name", ""),
+            "occupation": row.get("occupation", "") or enriched.get("occupation", ""),
+            "company": row.get("companyName", "") or enriched.get("company", ""),
+            "profile_url": profile_url,
+            "has_liked": True,
+            "has_commented": False,
+            "comment": "",
+            "comment_url": "",
+            "degree": row.get("degree", "") or enriched.get("degree", ""),
+        })
+
+    # --- Parse Commenters ---
+    commenters_raw = sheet_to_dicts("Export Commenters")
+    for row in commenters_raw:
+        url = row.get("postUrl", "")
+        profile_url = row.get("profileLink", "")
+        if not profile_url:
+            continue
+        enriched = enrich(profile_url, {
+            "company": ["companyName"],
+            "degree": ["connectionDegree"],
+            "occupation": ["linkedinHeadline"],
+        })
+        engagers.append({
+            "post_id": extract_post_id(url),
+            "name": row.get("fullName", "") or f"{row.get('firstName', '')} {row.get('lastName', '')}".strip(),
+            "occupation": row.get("occupation", "") or enriched.get("occupation", ""),
+            "company": enriched.get("company", ""),
+            "profile_url": profile_url,
+            "has_liked": False,
+            "has_commented": True,
+            "comment": row.get("comment", ""),
+            "comment_url": row.get("commentUrl", ""),
+            "degree": row.get("degree", "") or enriched.get("degree", ""),
+        })
+
+    # --- Parse BOB ---
+    bob_raw = sheet_to_dicts("Book of Business")
+    bob = []
+    for row in bob_raw:
+        name = row.get("company_name", "")
+        if not name:
+            continue
+        try:
+            fire = max(0, min(3, int(row.get("fire", "1") or "1")))
+        except ValueError:
+            fire = 1
+        tier = (row.get("tier", "") or "").strip().upper()
+        if tier not in ("A", "B", "C", ""):
+            tier = ""
+        bob.append({"company_name": name, "fire": fire, "tier": tier})
+
+    wb.close()
+
+    print(f"  Posts sheet:      {len(posts)} posts")
+    print(f"  Likers sheet:     {len(likers_raw)} likers")
+    print(f"  Commenters sheet: {len(commenters_raw)} commenters")
+    print(f"  Profiles sheet:   {len(profiles_raw)} profiles (enrichment)")
+    print(f"  BOB sheet:        {len(bob)} target accounts")
+    print(f"  Total engagers:   {len(engagers)} (before dedup)")
+
+    return posts, engagers, bob
 
 
 # ---------------------------------------------------------------------------
